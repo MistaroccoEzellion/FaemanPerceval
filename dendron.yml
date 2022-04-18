@@ -84,7 +84,7 @@ publishing:
         - root
     enableSiteLastModified: true
     siteRootDir: docs
-    siteUrl: 'https://faemanperceval.github.io'
+    siteUrl: 'https://mistaroccoezellion.github.io'
     enableFrontmatterTags: true
     enableHashesForFMTags: false
     enableRandomlyColoredTags: true
