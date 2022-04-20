@@ -1,0 +1,48 @@
+<h1 id="timeout"><a aria-hidden="true" class="anchor-heading" href="#timeout"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>Timeout</h1>
+<p>Similar to the <code>alarm</code> module, but uses <code>SIGKILL</code> instead of <code>SIGALRM</code>, which is not blockable.</p>
+<h2 id="usage"><a aria-hidden="true" class="anchor-heading" href="#usage"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>Usage</h2>
+<pre class="language-sh"><code class="language-sh">$ ./timeout 1 /bin/sh -c "echo hello; sleep 2; echo nope"
+hello
+&#x3C;exited>
+</code></pre>
+<blockquote>
+<p>The kill() system call can be used to send any signal to any process group or process.</p>
+</blockquote>
+<blockquote>
+<p>setpgid() sets the PGID of the process specified by pid to pgid.
+If pid is zero, then the process ID of the calling process is
+used.  If pgid is zero, then the PGID of the process specified by
+pid is made the same as its process ID.</p>
+</blockquote>
+<pre class="language-zig"><code class="language-zig">
+<span class="token keyword">const</span> std <span class="token operator">=</span> <span class="token builtin">@import</span><span class="token punctuation">(</span><span class="token string">"std"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> stdout <span class="token operator">=</span> std<span class="token punctuation">.</span>io<span class="token punctuation">.</span><span class="token function">getStdOut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">writer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">pub</span> <span class="token keyword">fn</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token class-name"><span class="token operator">!</span><span class="token builtin-type keyword">void</span></span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> args <span class="token operator">=</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">argsAlloc</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">)</span> <span class="token keyword">catch</span> <span class="token keyword">unreachable</span><span class="token punctuation">;</span>
+    <span class="token keyword">defer</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">argsFree</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>args<span class="token punctuation">.</span>len <span class="token operator">&#x3C;</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        std<span class="token punctuation">.</span>debug<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"usage: {s} &#x3C;seconds> &#x3C;command> [args...]"</span><span class="token punctuation">,</span> <span class="token punctuation">.</span><span class="token punctuation">{</span>args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">try</span> <span class="token function">kill_timeout</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>fmt<span class="token punctuation">.</span><span class="token function">parseInt</span><span class="token punctuation">(</span><span class="token builtin-type keyword">u32</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">catch</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">execv</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">2</span><span class="token operator">..</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">fn</span> <span class="token function">kill_timeout</span><span class="token punctuation">(</span>seconds<span class="token punctuation">:</span> <span class="token class-name"><span class="token builtin-type keyword">u32</span></span><span class="token punctuation">)</span> <span class="token class-name"><span class="token operator">!</span><span class="token builtin-type keyword">void</span></span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> child <span class="token operator">=</span> <span class="token keyword">try</span> std<span class="token punctuation">.</span>os<span class="token punctuation">.</span><span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>child <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        std<span class="token punctuation">.</span>time<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token builtin">@as</span><span class="token punctuation">(</span><span class="token builtin-type keyword">u32</span><span class="token punctuation">,</span> seconds <span class="token operator">*</span> 1_000_000_000<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> std<span class="token punctuation">.</span>os<span class="token punctuation">.</span><span class="token function">kill</span><span class="token punctuation">(</span>child<span class="token punctuation">,</span> std<span class="token punctuation">.</span>os<span class="token punctuation">.</span>SIG<span class="token punctuation">.</span>KILL<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    _ <span class="token operator">=</span> std<span class="token punctuation">.</span>os<span class="token punctuation">.</span>linux<span class="token punctuation">.</span><span class="token function">syscall2</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>os<span class="token punctuation">.</span>SYS<span class="token punctuation">.</span>setpgid<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+</code></pre>
+<h2 id="build"><a aria-hidden="true" class="anchor-heading" href="#build"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>build</h2>
+<pre class="language-bash"><code class="language-bash">zig build-exe timeout.zig -O ReleaseSmall --strip -fsingle-threaded 
+</code></pre>

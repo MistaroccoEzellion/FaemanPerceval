@@ -1,0 +1,46 @@
+<h1 id="alarm"><a aria-hidden="true" class="anchor-heading" href="#alarm"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>Alarm</h1>
+<p>Sets an alarm for the underlying process.</p>
+<p>This ensures that, without malicious interception, the process
+should automatically die after the specified number of seconds.</p>
+<p>This is automatically transferred to all child processes and across
+session and process group boundaries, so there is no need to do
+anything about child processes.</p>
+<h2 id="usage"><a aria-hidden="true" class="anchor-heading" href="#usage"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>Usage</h2>
+<pre><code>$ ./alarm 5 /bin/sh -c "echo hello; sleep 6; echo nope"
+hello
+&#x3C;exited>
+</code></pre>
+<blockquote>
+<p>The alarm() function shall cause the system to generate a SIGALRM signal for the process after the number of realtime seconds specified by seconds have elapsed.</p>
+</blockquote>
+<blockquote>
+<p>APPLICATION USAGE
+The fork() function clears pending alarms in the child process. A new process image created by one of the exec functions inherits the time left to an alarm signal in the old process' image.</p>
+</blockquote>
+<blockquote>
+<p>The exec family of functions shall replace the current process image with a new process image. The new image shall be constructed from a regular, executable file called the new process image file. There shall be no return from a successful exec, because the calling process image is overlaid by the new process image</p>
+</blockquote>
+<pre class="language-zig"><code class="language-zig"><span class="token keyword">const</span> std <span class="token operator">=</span> <span class="token builtin">@import</span><span class="token punctuation">(</span><span class="token string">"std"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> stdout <span class="token operator">=</span> std<span class="token punctuation">.</span>io<span class="token punctuation">.</span><span class="token function">getStdOut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">writer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">pub</span> <span class="token keyword">fn</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token class-name"><span class="token operator">!</span><span class="token builtin-type keyword">void</span></span><span class="token punctuation">{</span>
+    <span class="token keyword">const</span> args <span class="token operator">=</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">argsAlloc</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">)</span> <span class="token keyword">catch</span> <span class="token keyword">unreachable</span><span class="token punctuation">;</span>
+    <span class="token keyword">defer</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">argsFree</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>args<span class="token punctuation">.</span>len <span class="token operator">&#x3C;</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        std<span class="token punctuation">.</span>debug<span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token string">"usage: {s} &#x3C;seconds> &#x3C;command> [args...]"</span><span class="token punctuation">,</span> <span class="token punctuation">.</span><span class="token punctuation">{</span>args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// TODO: make alarm() in zig with std.os.raise() or std.os.kill()      </span>
+    _ <span class="token operator">=</span> std<span class="token punctuation">.</span>c<span class="token punctuation">.</span><span class="token function">alarm</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>fmt<span class="token punctuation">.</span><span class="token function">parseInt</span><span class="token punctuation">(</span><span class="token builtin-type keyword">u32</span><span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">catch</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+
+    <span class="token comment">// std.time.sleep(10e9); // 10 seconds</span>
+
+    <span class="token keyword">return</span> std<span class="token punctuation">.</span>process<span class="token punctuation">.</span><span class="token function">execv</span><span class="token punctuation">(</span>std<span class="token punctuation">.</span>testing<span class="token punctuation">.</span>allocator<span class="token punctuation">,</span> args<span class="token punctuation">[</span><span class="token number">2</span><span class="token operator">..</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+<h2 id="build"><a aria-hidden="true" class="anchor-heading" href="#build"><svg aria-hidden="true" viewBox="0 0 16 16"><use xlink:href="#svg-link"></use></svg></a>build</h2>
+<pre class="language-bash"><code class="language-bash">zig build-exe alarm.zig -O ReleaseSmall --strip -fsingle-threaded -lc
+</code></pre>

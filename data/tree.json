@@ -1,0 +1,45 @@
+{
+  "roots": [
+    {
+      "key": "wn8PE1RhG0znK1alrGFYv",
+      "title": "Root",
+      "icon": null,
+      "hasTitleNumberOutlined": false,
+      "vaultName": "vault",
+      "children": [
+        {
+          "key": "ENDcCZFjAW9h66eDoFg7I",
+          "title": "Zig Gatekeeper",
+          "icon": null,
+          "hasTitleNumberOutlined": false,
+          "vaultName": "vault",
+          "children": [
+            {
+              "key": "mnxgg66ue8xgf0468uqe7vr",
+              "title": "Alarm",
+              "icon": null,
+              "hasTitleNumberOutlined": false,
+              "vaultName": "vault",
+              "children": []
+            },
+            {
+              "key": "qgapc6797jc0sesost5n2o0",
+              "title": "Timeout",
+              "icon": null,
+              "hasTitleNumberOutlined": false,
+              "vaultName": "vault",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "child2parent": {
+    "403": null,
+    "wn8PE1RhG0znK1alrGFYv": null,
+    "ENDcCZFjAW9h66eDoFg7I": "wn8PE1RhG0znK1alrGFYv",
+    "qgapc6797jc0sesost5n2o0": "ENDcCZFjAW9h66eDoFg7I",
+    "mnxgg66ue8xgf0468uqe7vr": "ENDcCZFjAW9h66eDoFg7I"
+  }
+}
